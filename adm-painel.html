@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Billie Global BR — Painel ADM</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Montserrat:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #cc0000;
+    --red-dark: #8b0000;
+    --red-bright: #ff2200;
+    --red-glow: rgba(204,0,0,0.5);
+    --white: #ffffff;
+    --bg: #060000;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: 'Montserrat', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── BG ATMOSPHERE ── */
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background:
+      radial-gradient(ellipse 60% 50% at 10% 0%, rgba(160,0,0,0.4) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 60% at 90% 100%, rgba(120,0,0,0.35) 0%, transparent 55%);
+    z-index:0;
+    pointer-events:none;
+  }
+
+  /* ── LOGIN SCREEN ── */
+  #login-screen {
+    position:fixed; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    z-index:100;
+    background: radial-gradient(ellipse 80% 80% at 50% 50%, rgba(80,0,0,0.7) 0%, rgba(6,0,0,0.97) 70%);
+    backdrop-filter:blur(6px);
+  }
+
+  .login-card {
+    background: linear-gradient(135deg, rgba(100,0,0,0.45), rgba(15,0,0,0.7));
+    border:1px solid rgba(204,0,0,0.35);
+    border-radius:24px;
+    padding:52px 44px;
+    max-width:420px;
+    width:90%;
+    text-align:center;
+    box-shadow:0 0 80px rgba(204,0,0,0.2), inset 0 1px 0 rgba(255,80,80,0.1);
+    position:relative; overflow:hidden;
+  }
+
+  .login-card::before {
+    content:'';
+    position:absolute; top:-50%; left:-50%;
+    width:200%; height:200%;
+    background:radial-gradient(ellipse at 50% 0%, rgba(204,0,0,0.08) 0%, transparent 60%);
+    pointer-events:none;
+  }
+
+  .lock-icon {
+    font-size:3.5rem;
+    display:block;
+    margin-bottom:16px;
+    filter:drop-shadow(0 0 16px rgba(255,30,0,0.6));
+    animation:floatIcon 3s ease-in-out infinite;
+  }
+  @keyframes floatIcon {
+    0%,100%{transform:translateY(0);}
+    50%{transform:translateY(-8px);}
+  }
+
+  .login-logo {
+    width:64px; height:64px;
+    border-radius:50%;
+    border:2px solid var(--red);
+    object-fit:cover;
+    box-shadow:0 0 20px rgba(204,0,0,0.6);
+    margin-bottom:12px;
+  }
+
+  .login-title {
+    font-family:'Playfair Display',serif;
+    font-size:1.7rem;
+    font-weight:900;
+    margin-bottom:4px;
+    background:linear-gradient(135deg,#fff 0%,#ffbbbb 50%,#cc0000 100%);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  }
+
+  .login-sub {
+    font-size:0.72rem;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color:rgba(255,150,150,0.55);
+    margin-bottom:32px;
+  }
+
+  .login-input {
+    width:100%;
+    background:rgba(100,0,0,0.25);
+    border:1px solid rgba(204,0,0,0.4);
+    border-radius:12px;
+    padding:14px 18px;
+    color:var(--white);
+    font-family:'Montserrat',sans-serif;
+    font-size:1rem;
+    outline:none;
+    margin-bottom:16px;
+    transition:all 0.3s;
+    text-align:center;
+    letter-spacing:4px;
+  }
+  .login-input::placeholder { letter-spacing:2px; color:rgba(255,150,150,0.35); }
+  .login-input:focus { border-color:var(--red-bright); box-shadow:0 0 20px rgba(204,0,0,0.3); }
+
+  .login-btn {
+    width:100%;
+    background:linear-gradient(135deg,var(--red),var(--red-dark));
+    border:none;
+    border-radius:50px;
+    padding:14px;
+    color:var(--white);
+    font-family:'Montserrat',sans-serif;
+    font-weight:700;
+    font-size:0.88rem;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    cursor:pointer;
+    transition:all 0.3s;
+    box-shadow:0 4px 20px rgba(204,0,0,0.5);
+  }
+  .login-btn:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(204,0,0,0.7); }
+
+  .login-error {
+    margin-top:14px;
+    color:#ff8888;
+    font-size:0.8rem;
+    min-height:20px;
+    letter-spacing:1px;
+  }
+
+  /* ── MAIN ADM ── */
+  #adm-panel { display:none; position:relative; z-index:1; }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:20px 36px;
+    border-bottom:1px solid rgba(204,0,0,0.2);
+    background:rgba(0,0,0,0.3);
+    backdrop-filter:blur(12px);
+    position:sticky; top:0; z-index:50;
+    flex-wrap:wrap; gap:12px;
+  }
+
+  .topbar-left { display:flex; align-items:center; gap:14px; }
+  .topbar-logo { width:44px; height:44px; border-radius:50%; border:2px solid rgba(204,0,0,0.5); object-fit:cover; box-shadow:0 0 14px rgba(204,0,0,0.4); }
+  .topbar-title { font-family:'Playfair Display',serif; font-size:1.15rem; font-weight:700; }
+  .topbar-badge {
+    background:rgba(204,0,0,0.2);
+    border:1px solid rgba(204,0,0,0.35);
+    border-radius:50px;
+    padding:4px 14px;
+    font-size:0.65rem;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color:rgba(255,160,160,0.8);
+  }
+
+  .topbar-right { display:flex; align-items:center; gap:12px; }
+
+  .refresh-btn, .logout-btn {
+    border:none; border-radius:50px; padding:8px 18px;
+    font-family:'Montserrat',sans-serif; font-weight:700;
+    font-size:0.72rem; letter-spacing:2px; text-transform:uppercase;
+    cursor:pointer; transition:all 0.3s;
+  }
+  .refresh-btn { background:rgba(100,0,0,0.3); border:1px solid rgba(204,0,0,0.3); color:rgba(255,200,200,0.8); }
+  .refresh-btn:hover { background:rgba(150,0,0,0.4); color:var(--white); }
+  .logout-btn { background:linear-gradient(135deg,var(--red),var(--red-dark)); color:var(--white); box-shadow:0 2px 12px rgba(204,0,0,0.4); }
+  .logout-btn:hover { transform:translateY(-1px); box-shadow:0 4px 18px rgba(204,0,0,0.6); }
+
+  /* ── CONTENT ── */
+  .adm-content { padding:36px; max-width:1100px; margin:0 auto; }
+
+  /* ── STATS ROW ── */
+  .stats-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:16px;
+    margin-bottom:36px;
+  }
+
+  .stat-card {
+    background:linear-gradient(135deg,rgba(80,0,0,0.4),rgba(20,0,0,0.6));
+    border:1px solid rgba(204,0,0,0.25);
+    border-radius:16px;
+    padding:24px 22px;
+    position:relative; overflow:hidden;
+    transition:transform 0.3s;
+  }
+  .stat-card:hover { transform:translateY(-3px); }
+  .stat-card::before {
+    content:'';
+    position:absolute; top:0; left:0; right:0; height:2px;
+    background:linear-gradient(90deg,transparent,var(--red),transparent);
+  }
+
+  .stat-icon { font-size:2rem; margin-bottom:8px; display:block; }
+  .stat-val {
+    font-family:'Playfair Display',serif;
+    font-size:2.4rem;
+    font-weight:900;
+    color:var(--white);
+    line-height:1;
+    margin-bottom:4px;
+  }
+  .stat-label {
+    font-size:0.7rem;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color:rgba(255,150,150,0.6);
+  }
+
+  /* ── SECTION HEADER ── */
+  .section-header {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:20px; flex-wrap:wrap; gap:10px;
+  }
+  .section-title {
+    font-family:'Playfair Display',serif;
+    font-size:1.5rem; font-weight:900;
+    display:flex; align-items:center; gap:10px;
+  }
+  .section-title::after {
+    content:'';
+    display:inline-block;
+    width:40px; height:2px;
+    background:linear-gradient(90deg,var(--red),transparent);
+    border-radius:2px;
+  }
+
+  /* ── FILTER BAR ── */
+  .filter-bar {
+    display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:20px;
+  }
+
+  .filter-input {
+    background:rgba(80,0,0,0.25);
+    border:1px solid rgba(204,0,0,0.3);
+    border-radius:50px;
+    padding:8px 18px;
+    color:var(--white);
+    font-family:'Montserrat',sans-serif;
+    font-size:0.8rem;
+    outline:none;
+    transition:all 0.3s;
+    min-width:180px;
+  }
+  .filter-input::placeholder { color:rgba(255,150,150,0.4); }
+  .filter-input:focus { border-color:var(--red-bright); box-shadow:0 0 12px rgba(204,0,0,0.2); }
+
+  .filter-select {
+    background:rgba(80,0,0,0.25);
+    border:1px solid rgba(204,0,0,0.3);
+    border-radius:50px;
+    padding:8px 18px;
+    color:var(--white);
+    font-family:'Montserrat',sans-serif;
+    font-size:0.8rem;
+    outline:none;
+    cursor:pointer;
+    transition:all 0.3s;
+  }
+  .filter-select option { background:#200000; color:var(--white); }
+
+  /* ── TABLE ── */
+  .table-wrap {
+    background:linear-gradient(135deg,rgba(60,0,0,0.4),rgba(10,0,0,0.6));
+    border:1px solid rgba(204,0,0,0.2);
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow:0 0 40px rgba(204,0,0,0.08);
+  }
+
+  table { width:100%; border-collapse:collapse; }
+
+  thead tr {
+    background:rgba(204,0,0,0.15);
+    border-bottom:1px solid rgba(204,0,0,0.25);
+  }
+
+  th {
+    padding:14px 18px;
+    font-size:0.68rem;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color:rgba(255,150,150,0.7);
+    font-weight:700;
+    text-align:left;
+    white-space:nowrap;
+  }
+
+  tbody tr {
+    border-bottom:1px solid rgba(204,0,0,0.1);
+    transition:background 0.2s;
+    animation:rowIn 0.3s ease both;
+  }
+
+  @keyframes rowIn {
+    from { opacity:0; transform:translateX(-10px); }
+    to   { opacity:1; transform:translateX(0); }
+  }
+
+  tbody tr:hover { background:rgba(100,0,0,0.25); }
+  tbody tr:last-child { border-bottom:none; }
+
+  td {
+    padding:14px 18px;
+    font-size:0.88rem;
+    color:rgba(255,220,220,0.9);
+    vertical-align:middle;
+  }
+
+  .rank-medal {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:32px; height:32px;
+    border-radius:50%;
+    font-size:0.8rem; font-weight:900;
+  }
+  .medal-1 { background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; box-shadow:0 0 14px rgba(255,180,0,0.5); }
+  .medal-2 { background:linear-gradient(135deg,#c0c0c0,#808080); color:#000; }
+  .medal-3 { background:linear-gradient(135deg,#cd7f32,#8b4513); color:#fff; }
+  .medal-other { background:rgba(100,0,0,0.3); border:1px solid rgba(204,0,0,0.3); color:rgba(255,160,160,0.7); font-size:0.75rem; }
+
+  .player-name-cell { font-weight:700; color:var(--white); }
+
+  .score-bar-wrap { display:flex; align-items:center; gap:10px; }
+  .score-bar {
+    flex:1; height:6px;
+    background:rgba(100,0,0,0.3);
+    border-radius:4px; overflow:hidden;
+    min-width:60px;
+  }
+  .score-bar-fill {
+    height:100%;
+    background:linear-gradient(90deg,var(--red-dark),var(--red-bright));
+    border-radius:4px;
+    box-shadow:0 0 6px rgba(255,30,0,0.5);
+  }
+  .score-num-cell {
+    font-family:'Playfair Display',serif;
+    font-size:1.1rem; font-weight:700;
+    color:var(--red-bright);
+    white-space:nowrap;
+  }
+
+  .pct-badge {
+    display:inline-block;
+    padding:3px 10px;
+    border-radius:50px;
+    font-size:0.72rem; font-weight:700;
+    letter-spacing:1px;
+  }
+  .pct-perfect { background:rgba(0,150,60,0.25); border:1px solid rgba(0,200,80,0.35); color:#88ffaa; }
+  .pct-great   { background:rgba(200,120,0,0.2); border:1px solid rgba(255,160,0,0.3); color:#ffcc88; }
+  .pct-good    { background:rgba(100,0,180,0.2); border:1px solid rgba(150,0,255,0.3); color:#cc99ff; }
+  .pct-low     { background:rgba(150,0,0,0.25); border:1px solid rgba(204,0,0,0.35); color:#ffaaaa; }
+
+  .date-cell { font-size:0.75rem; color:rgba(255,150,150,0.5); white-space:nowrap; }
+
+  /* ── EMPTY / LOADING ── */
+  .empty-state {
+    text-align:center;
+    padding:60px 20px;
+    color:rgba(255,150,150,0.5);
+    font-size:0.9rem;
+    letter-spacing:1px;
+  }
+  .empty-state span { font-size:3rem; display:block; margin-bottom:12px; }
+
+  .spinner {
+    width:36px; height:36px;
+    border:3px solid rgba(204,0,0,0.2);
+    border-top-color:var(--red-bright);
+    border-radius:50%;
+    animation:spin 0.8s linear infinite;
+    margin:40px auto;
+  }
+  @keyframes spin { to{transform:rotate(360deg);} }
+
+  /* ── TOP PODIUM ── */
+  .podium {
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    gap:12px;
+    margin-bottom:36px;
+    flex-wrap:wrap;
+  }
+
+  .podium-place {
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    transition:transform 0.3s;
+  }
+  .podium-place:hover { transform:translateY(-4px); }
+
+  .podium-avatar {
+    width:60px; height:60px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.6rem;
+    border:3px solid;
+    position:relative;
+  }
+  .podium-1 .podium-avatar { border-color:#ffd700; box-shadow:0 0 20px rgba(255,180,0,0.5); background:rgba(255,180,0,0.1); }
+  .podium-2 .podium-avatar { border-color:#c0c0c0; box-shadow:0 0 14px rgba(200,200,200,0.3); background:rgba(200,200,200,0.05); }
+  .podium-3 .podium-avatar { border-color:#cd7f32; box-shadow:0 0 14px rgba(180,100,0,0.3); background:rgba(180,100,0,0.05); }
+
+  .podium-name { font-weight:700; font-size:0.85rem; text-align:center; max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .podium-score-big { font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:900; }
+  .podium-1 .podium-score-big { color:#ffd700; }
+  .podium-2 .podium-score-big { color:#c0c0c0; }
+  .podium-3 .podium-score-big { color:#cd7f32; }
+
+  .podium-block {
+    border-radius:12px 12px 0 0;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:900; font-size:1.3rem;
+    width:90px;
+  }
+  .podium-1 .podium-block { background:linear-gradient(180deg,rgba(255,180,0,0.25),rgba(255,180,0,0.05)); border:1px solid rgba(255,180,0,0.25); height:90px; color:#ffd700; }
+  .podium-2 .podium-block { background:linear-gradient(180deg,rgba(200,200,200,0.15),rgba(200,200,200,0.03)); border:1px solid rgba(200,200,200,0.15); height:70px; color:#c0c0c0; }
+  .podium-3 .podium-block { background:linear-gradient(180deg,rgba(180,100,0,0.15),rgba(180,100,0,0.03)); border:1px solid rgba(180,100,0,0.15); height:55px; color:#cd7f32; }
+
+  /* ── CHART BAR ── */
+  .score-dist {
+    background:linear-gradient(135deg,rgba(60,0,0,0.4),rgba(10,0,0,0.6));
+    border:1px solid rgba(204,0,0,0.2);
+    border-radius:16px;
+    padding:28px;
+    margin-bottom:36px;
+  }
+  .dist-title {
+    font-family:'Playfair Display',serif;
+    font-size:1.1rem; font-weight:700;
+    margin-bottom:20px;
+  }
+  .dist-bars { display:flex; flex-direction:column; gap:10px; }
+  .dist-row { display:flex; align-items:center; gap:12px; }
+  .dist-label { font-size:0.72rem; color:rgba(255,150,150,0.6); width:60px; flex-shrink:0; text-align:right; }
+  .dist-bar-wrap { flex:1; height:22px; background:rgba(100,0,0,0.2); border-radius:4px; overflow:hidden; position:relative; }
+  .dist-bar-fill {
+    height:100%;
+    background:linear-gradient(90deg,var(--red-dark),var(--red-bright));
+    border-radius:4px;
+    transition:width 1s ease;
+    box-shadow:0 0 8px rgba(255,30,0,0.4);
+    position:relative;
+  }
+  .dist-count { font-size:0.78rem; font-weight:700; color:rgba(255,200,200,0.7); width:30px; flex-shrink:0; }
+
+  /* ── DELETE BTN ── */
+  .del-btn {
+    background:transparent;
+    border:1px solid rgba(204,0,0,0.3);
+    border-radius:6px;
+    color:rgba(255,100,100,0.6);
+    font-size:0.75rem;
+    padding:4px 10px;
+    cursor:pointer;
+    transition:all 0.2s;
+    font-family:'Montserrat',sans-serif;
+  }
+  .del-btn:hover { background:rgba(180,0,0,0.3); color:#ff8888; border-color:rgba(255,50,50,0.5); }
+
+  /* ── TOAST ── */
+  .toast {
+    position:fixed; bottom:30px; left:50%;
+    transform:translateX(-50%) translateY(80px);
+    background:rgba(20,0,0,0.95);
+    border:1px solid rgba(204,0,0,0.5);
+    border-radius:50px; padding:11px 26px;
+    color:var(--white); font-size:0.84rem; font-weight:600;
+    z-index:999; transition:transform 0.4s ease;
+    pointer-events:none; box-shadow:0 8px 32px rgba(204,0,0,0.4);
+    white-space:nowrap;
+  }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align:center; padding:24px 20px;
+    border-top:1px solid rgba(204,0,0,0.1);
+    color:rgba(255,100,100,0.3); font-size:0.68rem;
+    letter-spacing:2px; text-transform:uppercase;
+    position:relative; z-index:1;
+  }
+  footer span { color:rgba(204,0,0,0.45); }
+
+  @media(max-width:700px){
+    .topbar { padding:14px 18px; }
+    .adm-content { padding:20px 16px; }
+    th,td { padding:10px 12px; }
+    .podium { gap:6px; }
+    .podium-block { width:70px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════ LOGIN ════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <img class="login-logo" src="https://raw.githubusercontent.com/carluzwolf/Global/refs/heads/main/Picsart_26-01-07_21-59-47-625.jpg" alt="Logo">
+    <span class="lock-icon">🔐</span>
+    <h1 class="login-title">Painel ADM</h1>
+    <p class="login-sub">Billie Global BR — Acesso Restrito</p>
+    <input class="login-input" type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" />
+    <button class="login-btn" onclick="doLogin()">Entrar →</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- ════ ADM PANEL ════ -->
+<div id="adm-panel">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <img class="topbar-logo" src="https://raw.githubusercontent.com/carluzwolf/Global/refs/heads/main/Picsart_26-01-07_21-59-47-625.jpg" alt="Logo">
+      <div>
+        <div class="topbar-title">Billie Global BR</div>
+      </div>
+      <div class="topbar-badge">⚙️ ADM</div>
+    </div>
+    <div class="topbar-right">
+      <button class="refresh-btn" onclick="loadAll()">🔄 Atualizar</button>
+      <button class="logout-btn" onclick="doLogout()">Sair</button>
+    </div>
+  </div>
+
+  <div class="adm-content">
+
+    <!-- STATS -->
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card"><span class="stat-icon">👥</span><div class="stat-val" id="stat-players">—</div><div class="stat-label">Jogadores</div></div>
+      <div class="stat-card"><span class="stat-icon">🎯</span><div class="stat-val" id="stat-avg">—</div><div class="stat-label">Média de Acertos</div></div>
+      <div class="stat-card"><span class="stat-icon">👑</span><div class="stat-val" id="stat-best">—</div><div class="stat-label">Maior Pontuação</div></div>
+      <div class="stat-card"><span class="stat-icon">🌟</span><div class="stat-val" id="stat-perfect">—</div><div class="stat-label">Pontuação Perfeita</div></div>
+    </div>
+
+    <!-- PODIUM -->
+    <div class="podium" id="podium-section"></div>
+
+    <!-- SCORE DISTRIBUTION -->
+    <div class="score-dist" id="dist-section" style="display:none;">
+      <div class="dist-title">📊 Distribuição de Pontuações</div>
+      <div class="dist-bars" id="dist-bars"></div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="section-header">
+      <div class="section-title">🏆 Ranking Completo</div>
+      <div style="font-size:0.75rem;color:rgba(255,150,150,0.5);letter-spacing:2px;" id="last-update">—</div>
+    </div>
+
+    <div class="filter-bar">
+      <input class="filter-input" type="text" id="search-input" placeholder="🔍 Buscar jogador..." oninput="filterTable()" />
+      <select class="filter-select" id="sort-select" onchange="filterTable()">
+        <option value="score">Ordenar: Pontuação</option>
+        <option value="name">Ordenar: Nome</option>
+        <option value="date">Ordenar: Data</option>
+      </select>
+      <select class="filter-select" id="filter-pct" onchange="filterTable()">
+        <option value="all">Todos os Níveis</option>
+        <option value="perfect">Perfeito (100%)</option>
+        <option value="great">Ótimo (80%+)</option>
+        <option value="good">Bom (60%+)</option>
+        <option value="low">Abaixo de 60%</option>
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      <div id="table-content"><div class="spinner"></div></div>
+    </div>
+
+  </div>
+  <footer>© 2025 <span>Billie Global BR</span> — Painel Administrativo Privado</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, getDocs, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey: "AIzaSyBby4Td_tcWDk1T9KWe-pg3VXC6IXCpErc",
+  authDomain: "perguntas-ae386.firebaseapp.com",
+  projectId: "perguntas-ae386",
+  storageBucket: "perguntas-ae386.firebasestorage.app",
+  messagingSenderId: "1005356992837",
+  appId: "1:1005356992837:web:4a577f8ec58ed43d49162c"
+});
+const db = getFirestore(app);
+
+// ── SENHA ADM (mude aqui!)
+const ADM_PASSWORD = "billieglobalbr2025";
+
+let allData = [];
+
+// ── TOAST
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── LOGIN
+window.doLogin = function() {
+  const pass = document.getElementById('login-pass').value;
+  if (pass === ADM_PASSWORD) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('adm-panel').style.display = 'block';
+    loadAll();
+  } else {
+    const err = document.getElementById('login-error');
+    err.textContent = '❌ Senha incorreta. Tente novamente.';
+    document.getElementById('login-pass').value = '';
+    setTimeout(() => err.textContent = '', 3000);
+  }
+};
+
+window.doLogout = function() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('adm-panel').style.display = 'none';
+  document.getElementById('login-pass').value = '';
+};
+
+// ── LOAD ALL
+window.loadAll = async function() {
+  document.getElementById('table-content').innerHTML = '<div class="spinner"></div>';
+  try {
+    const q = query(collection(db, 'rankings'), orderBy('score','desc'));
+    const snap = await getDocs(q);
+    allData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    updateStats();
+    updatePodium();
+    updateDistribution();
+    filterTable();
+    document.getElementById('last-update').textContent = '🕐 Atualizado: ' + new Date().toLocaleTimeString('pt-BR');
+    toast('✅ Dados carregados!');
+  } catch(e) {
+    console.error(e);
+    document.getElementById('table-content').innerHTML = '<div class="empty-state"><span>⚠️</span>Erro ao carregar dados do Firebase.</div>';
+    toast('❌ Erro ao conectar ao Firebase.');
+  }
+};
+
+// ── STATS
+function updateStats() {
+  const n = allData.length;
+  document.getElementById('stat-players').textContent = n;
+  if (n === 0) { document.getElementById('stat-avg').textContent = '—'; document.getElementById('stat-best').textContent = '—'; document.getElementById('stat-perfect').textContent = '—'; return; }
+  const avg = allData.reduce((a,d) => a + d.score, 0) / n;
+  document.getElementById('stat-avg').textContent = avg.toFixed(1);
+  document.getElementById('stat-best').textContent = allData[0].score + '/20';
+  document.getElementById('stat-perfect').textContent = allData.filter(d => d.score === 20).length;
+}
+
+// ── PODIUM
+function updatePodium() {
+  const sec = document.getElementById('podium-section');
+  if (allData.length < 1) { sec.innerHTML = ''; return; }
+  const top3 = allData.slice(0, 3);
+  const order = top3.length >= 2 ? [1, 0, 2] : [0];
+  const classes = ['podium-2','podium-1','podium-3'];
+  const icons = ['🥇','🥈','🥉'];
+  const emojis = ['🌟','🎵','🎤'];
+
+  let html = '';
+  order.forEach(i => {
+    if (!top3[i]) return;
+    const d = top3[i];
+    const cls = classes[i];
+    html += `
+      <div class="podium-place ${cls}">
+        <div class="podium-avatar">${emojis[i]}</div>
+        <div class="podium-name">${escHtml(d.name)}</div>
+        <div class="podium-score-big">${d.score}</div>
+        <div class="podium-block">${icons[i]}</div>
+      </div>`;
+  });
+  sec.innerHTML = html;
+}
+
+// ── DISTRIBUTION
+function updateDistribution() {
+  const sec = document.getElementById('dist-section');
+  if (allData.length === 0) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+
+  const ranges = [
+    { label: '100%',   min:20, max:20 },
+    { label: '80–99%', min:16, max:19 },
+    { label: '60–79%', min:12, max:15 },
+    { label: '40–59%', min:8,  max:11 },
+    { label: '< 40%',  min:0,  max:7  },
+  ];
+  const max = Math.max(1, ...ranges.map(r => allData.filter(d => d.score >= r.min && d.score <= r.max).length));
+  const bars = document.getElementById('dist-bars');
+  bars.innerHTML = ranges.map(r => {
+    const count = allData.filter(d => d.score >= r.min && d.score <= r.max).length;
+    const pct = Math.round((count / max) * 100);
+    return `<div class="dist-row">
+      <div class="dist-label">${r.label}</div>
+      <div class="dist-bar-wrap"><div class="dist-bar-fill" style="width:${pct}%"></div></div>
+      <div class="dist-count">${count}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── FILTER/SORT TABLE
+window.filterTable = function() {
+  const search = document.getElementById('search-input').value.toLowerCase();
+  const sort = document.getElementById('sort-select').value;
+  const filterPct = document.getElementById('filter-pct').value;
+
+  let data = [...allData];
+
+  if (search) data = data.filter(d => d.name.toLowerCase().includes(search));
+
+  if (filterPct === 'perfect') data = data.filter(d => d.score === 20);
+  else if (filterPct === 'great') data = data.filter(d => d.score >= 16 && d.score < 20);
+  else if (filterPct === 'good') data = data.filter(d => d.score >= 12 && d.score < 16);
+  else if (filterPct === 'low') data = data.filter(d => d.score < 12);
+
+  if (sort === 'name') data.sort((a,b) => a.name.localeCompare(b.name));
+  else if (sort === 'date') data.sort((a,b) => {
+    const ta = a.timestamp?.seconds || 0;
+    const tb = b.timestamp?.seconds || 0;
+    return tb - ta;
+  });
+  else data.sort((a,b) => b.score - a.score);
+
+  renderTable(data);
+};
+
+function renderTable(data) {
+  const wrap = document.getElementById('table-content');
+  if (data.length === 0) {
+    wrap.innerHTML = '<div class="empty-state"><span>🎵</span>Nenhum resultado encontrado.</div>';
+    return;
+  }
+
+  // Real rank position (from allData sorted by score)
+  const rankMap = {};
+  allData.forEach((d,i) => { if (!rankMap[d.id]) rankMap[d.id] = i+1; });
+
+  let rows = data.map((d, i) => {
+    const pos = rankMap[d.id] || (i+1);
+    const medalClass = pos===1?'medal-1':pos===2?'medal-2':pos===3?'medal-3':'medal-other';
+    const medalText = pos===1?'🥇':pos===2?'🥈':pos===3?'🥉':pos;
+    const pct = d.pct ?? Math.round((d.score/20)*100);
+    let pctClass='pct-low', pctLabel='Iniciante';
+    if(pct===100){pctClass='pct-perfect';pctLabel='Perfeito!';}
+    else if(pct>=80){pctClass='pct-great';pctLabel='Ótimo';}
+    else if(pct>=60){pctClass='pct-good';pctLabel='Bom';}
+    const barW = Math.round((d.score/20)*100);
+    const date = d.timestamp ? new Date(d.timestamp.seconds*1000).toLocaleDateString('pt-BR') + ' ' + new Date(d.timestamp.seconds*1000).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '—';
+    return `<tr>
+      <td><span class="rank-medal ${medalClass}">${medalText}</span></td>
+      <td class="player-name-cell">${escHtml(d.name)}</td>
+      <td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill" style="width:${barW}%"></div></div><span class="score-num-cell">${d.score}<small style="font-size:.6em;color:rgba(255,150,150,0.5)">/20</small></span></div></td>
+      <td><span class="pct-badge ${pctClass}">${pct}% · ${pctLabel}</span></td>
+      <td class="date-cell">${date}</td>
+      <td><button class="del-btn" onclick="deleteEntry('${d.id}')">✕ Remover</button></td>
+    </tr>`;
+  }).join('');
+
+  wrap.innerHTML = `<table>
+    <thead><tr>
+      <th>#</th><th>Jogador</th><th>Pontuação</th><th>Desempenho</th><th>Data</th><th>Ação</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+// ── DELETE
+window.deleteEntry = async function(id) {
+  if (!confirm('Remover este registro do ranking?')) return;
+  try {
+    await deleteDoc(doc(db, 'rankings', id));
+    allData = allData.filter(d => d.id !== id);
+    updateStats();
+    updatePodium();
+    updateDistribution();
+    filterTable();
+    toast('🗑️ Registro removido!');
+  } catch(e) {
+    toast('❌ Erro ao remover.');
+  }
+};
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
